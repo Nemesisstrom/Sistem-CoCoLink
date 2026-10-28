@@ -73,6 +73,8 @@ Route::middleware('auth')->group(function () {
         // CRUD Resource Manajemen Pengguna
         Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
 
+        Route::post('/users/{id}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
+
         // CRUD Jenis Limbah (Waste Types)
         Route::resource('waste-types', WasteTypeController::class)->except(['create', 'edit', 'show']);
 

@@ -5,7 +5,7 @@
     <div class="flex justify-between items-center mb-6">
         <div>
             <h2 class="text-2xl font-bold text-gray-800">Manajemen Pengguna CoCoLink</h2>
-            <p class="text-sm text-gray-500">Kelola akun, pendaftaran user baru, serta alokasi role pengguna.</p>
+            <p class="text-sm text-gray-500">Kelola akun, pendaftaran user baru, alokasi role, serta status verifikasi pengguna.</p>
         </div>
         <div class="flex items-center gap-2">
             {{-- Tombol Ekspor PDF --}}
@@ -39,9 +39,10 @@
 
     {{-- Filter & Search Form --}}
     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
-        <form action="{{ route('super-admin.users.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <form action="{{ route('super-admin.users.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <input type="text" name="search" placeholder="Cari Nama, Email, atau Telepon..." value="{{ request('search') }}" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
 
+            {{-- Filter Role --}}
             <select name="role" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 <option value="">-- Semua Role --</option>
                 @foreach($roles as $role)
@@ -49,6 +50,13 @@
                         {{ strtoupper(str_replace('_', ' ', $role->name)) }}
                     </option>
                 @endforeach
+            </select>
+
+            {{-- Filter Status Verifikasi Email --}}
+            <select name="verification" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="">-- Semua Status Verifikasi --</option>
+                <option value="verified" {{ request('verification') == 'verified' ? 'selected' : '' }}>✓ Sudah Terverifikasi</option>
+                <option value="unverified" {{ request('verification') == 'unverified' ? 'selected' : '' }}>⏳ Belum Terverifikasi</option>
             </select>
 
             <div class="flex gap-2">
@@ -67,8 +75,8 @@
                         <th class="p-4">No</th>
                         <th class="p-4">Nama</th>
                         <th class="p-4">Email</th>
-                        <th class="p-4">No. Telepon</th>
                         <th class="p-4">Role</th>
+                        <th class="p-4">Status Verifikasi</th>
                         <th class="p-4 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -76,13 +84,37 @@
                     @forelse($users as $index => $user)
                     <tr class="hover:bg-gray-50/50">
                         <td class="p-4 font-medium text-gray-400">{{ $users->firstItem() + $index }}</td>
-                        <td class="p-4 font-bold text-gray-800">{{ $user->name }}</td>
+                        <td class="p-4 font-bold text-gray-800">
+                            {{ $user->name }}
+                            @if($user->phone_number)
+                                <div class="text-xs font-normal text-gray-400">{{ $user->phone_number }}</div>
+                            @endif
+                        </td>
                         <td class="p-4">{{ $user->email }}</td>
-                        <td class="p-4">{{ $user->phone_number ?? '-' }}</td>
                         <td class="p-4">
                             <span class="px-2.5 py-1 text-xs rounded-full font-bold bg-emerald-100 text-emerald-800">
                                 {{ strtoupper(str_replace('_', ' ', $user->roles->pluck('name')->first() ?? 'NO ROLE')) }}
                             </span>
+                        </td>
+                        {{-- Kolom Status Verifikasi & Kirim Ulang --}}
+                        <td class="p-4">
+                            @if($user->hasVerifiedEmail())
+                                <span class="px-2.5 py-1 text-xs rounded-full font-bold bg-green-100 text-green-800 border border-green-200 inline-flex items-center gap-1">
+                                    ✓ Terverifikasi
+                                </span>
+                            @else
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2.5 py-1 text-xs rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                        ⏳ Belum Verifikasi
+                                    </span>
+                                    <form action="{{ route('super-admin.users.resend-verification', $user->id) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="text-[11px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-2 py-1 rounded border transition" title="Kirim Ulang Link Verifikasi">
+                                            🔄 Kirim Ulang
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
                         </td>
                         <td class="p-4 text-right space-x-2">
                             <button data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-3 py-1.5 rounded-md border border-blue-200 transition">

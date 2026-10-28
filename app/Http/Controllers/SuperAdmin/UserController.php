@@ -71,6 +71,25 @@ class UserController extends Controller
         return redirect()->back()->with('success', "Pengguna {$user->name} berhasil ditambahkan. Email verifikasi telah dikirim otomatis.");
     }
 
+    public function resendVerification($id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->hasVerifiedEmail()) {
+            return redirect()->back()->with('error', "Pengguna {$user->name} sudah melakukan verifikasi email.");
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        ActivityLog::create([
+            'user_id'     => auth()->id(),
+            'action'      => 'RESEND_VERIFICATION',
+            'description' => "Mengirim ulang link verifikasi email ke {$user->email}.",
+        ]);
+
+        return redirect()->back()->with('success', "Link verifikasi email berhasil dikirim ulang ke {$user->email}.");
+    }
+
     // UPDATE: Memperbarui data pengguna & catat ActivityLog
     public function update(Request $request, $id)
     {
