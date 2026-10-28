@@ -121,6 +121,12 @@ Route::middleware('auth')->group(function () {
         // Aksi Terima/Tolak Alokasi & Tandai Stok Siap
         Route::patch('/allocations/{id}/respond', [SupplyController::class, 'respondAllocation'])->name('allocations.respond');
         Route::patch('/allocations/{id}/ready', [SupplyController::class, 'updateReadyStatus'])->name('allocations.ready');
+
+        // Penugasan Driver & Input Stok Harian
+        Route::post('/allocations/{id}/assign-driver', [SupplyController::class, 'assignDriver'])->name('allocations.assign-driver');
+
+        // Pencatatan Stok Harian
+        Route::post('/daily-stock', [SupplyController::class, 'storeDailyStock'])->name('daily-stock.store');
     });
 
     // ------------------------------------------------------------------------

@@ -8,10 +8,48 @@
             <h1 class="text-2xl font-bold text-gray-800">Dashboard Pasokan - Koperasi Anak</h1>
             <p class="text-sm text-gray-500">Kelola alokasi kuota pesanan dari Koperasi Induk, konfirmasi kesiapan barang, dan atur ketersediaan stok.</p>
         </div>
-        <div class="text-right">
-            <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-3 py-1 rounded-full">Unit Koperasi Terhubung</span>
-            <p class="text-sm font-bold text-gray-800 mt-1">{{ auth()->user()->name }}</p>
+        <div class="flex items-center gap-4">
+            <div class="text-right">
+                <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-3 py-1 rounded-full">Unit Koperasi Terhubung</span>
+                <p class="text-sm font-bold text-gray-800 mt-1">{{ auth()->user()->name }}</p>
+            </div>
         </div>
+    </div>
+
+    <!-- Form Input Stok Harian -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h3 class="text-md font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <span>➕</span> Catat Pasokan Stok Masuk Harian
+        </h3>
+        <form action="{{ route('koperasi-anak.daily-stock.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+            @csrf
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Jenis Limbah</label>
+                <select name="waste_type_id" class="w-full text-xs p-2 border rounded-lg bg-white" required>
+                    <option value="">-- Pilih Jenis --</option>
+                    @foreach($wasteTypes as $type)
+                        <option value="{{ $type->id }}">{{ $type->name }} ({{ $type->unit }})</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Jumlah Masuk</label>
+                <input type="number" step="0.1" min="0.1" name="stock_in" placeholder="Volume" class="w-full text-xs p-2 border rounded-lg" required>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Masuk</label>
+                <input type="date" name="entry_date" value="{{ date('Y-m-d') }}" class="w-full text-xs p-2 border rounded-lg" required>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Catatan (Opsional)</label>
+                <input type="text" name="notes" placeholder="Ket. Petani/Wilayah" class="w-full text-xs p-2 border rounded-lg">
+            </div>
+            <div>
+                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2 rounded-lg transition">
+                    + Simpan Stok
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- Metrik Ringkas Pasokan -->
@@ -50,7 +88,7 @@
                         <th class="p-4">Target Pasokan</th>
                         <th class="p-4">Pabrik / Tujuan</th>
                         <th class="p-4">Status Kesiapan</th>
-                        <th class="p-4">Aksi / Kontrol</th>
+                        <th class="p-4">Aksi / Penugasan Driver</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -100,20 +138,29 @@
                                         </button>
                                     </form>
                                 </div>
-                            @elseif($allocation->status === 'accepted')
-                                <form action="{{ route('koperasi-anak.allocations.ready', $allocation->id) }}" method="POST">
+                            @elseif($allocation->status === 'accepted' && !$allocation->shipment)
+                                <!-- Form Tugaskan Driver -->
+                                <form action="{{ route('koperasi-anak.allocations.assign-driver', $allocation->id) }}" method="POST" class="p-2.5 bg-blue-50 rounded-lg border border-blue-100 space-y-2">
                                     @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition">
-                                        Tandai Pasokan Siap Dijemput 📦
+                                    <p class="text-xs font-bold text-blue-900">Tugaskan Driver Logistik:</p>
+                                    <select name="driver_id" class="w-full text-xs p-1.5 border rounded bg-white" required>
+                                        <option value="">-- Pilih Driver --</option>
+                                        @foreach($drivers as $driver)
+                                            <option value="{{ $driver->id }}">{{ $driver->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="date" name="delivery_date" value="{{ date('Y-m-d') }}" class="w-full text-xs p-1.5 border rounded bg-white" required>
+                                    <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs py-1.5 rounded transition">
+                                        Tugaskan & Kirim Email 🚚
                                     </button>
                                 </form>
-                            @elseif($allocation->status === 'ready')
-                                <span class="text-xs text-emerald-700 font-semibold flex items-center gap-1">
-                                    Menunggu Driver Penjemput 🚚
-                                </span>
+                            @elseif($allocation->shipment)
+                                <div class="text-xs space-y-1">
+                                    <p class="font-semibold text-gray-800">🚚 Driver: {{ $allocation->shipment->driver->name ?? 'N/A' }}</p>
+                                    <p class="text-gray-400">Tgl Kirim: {{ $allocation->shipment->delivery_date }}</p>
+                                </div>
                             @else
-                                <span class="text-xs text-gray-400 italic">Selesai / Dalam Pengiriman</span>
+                                <span class="text-xs text-gray-400 italic">Selesai / Ditolak</span>
                             @endif
                         </td>
                     </tr>

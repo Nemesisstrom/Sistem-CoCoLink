@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\WasteType;
+use App\Models\Shipment;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -49,8 +50,14 @@ class DashboardController extends Controller
     // Dashboard Driver
     public function driverDashboard()
     {
-        $user = Auth::user();
-        $shipments = $user->shipments()->with(['allocation.order.wasteType', 'allocation.koperasiAnak', 'allocation.order.pengepul'])->latest()->get();
+        $shipments = Shipment::with([
+            'allocation.koperasiAnak',
+            'allocation.order.pengepul',
+            'allocation.order.wasteType'
+        ])
+        ->where('driver_id', auth()->id())
+        ->latest()
+        ->get();
 
         return view('driver.dashboard', compact('shipments'));
     }
