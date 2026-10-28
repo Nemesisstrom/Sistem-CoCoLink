@@ -4,11 +4,14 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdmin\UserController;
+use App\Http\Controllers\SuperAdmin\WasteTypeController;
 use App\Http\Controllers\KoperasiInduk\OrderAllocationController;
 use App\Http\Controllers\KoperasiInduk\LaporanController;
 use App\Http\Controllers\KoperasiAnak\SupplyController;
 use App\Http\Controllers\Pengepul\OrderController;
 use App\Http\Controllers\Driver\DriverShipmentController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -20,18 +23,23 @@ use App\Http\Controllers\Driver\DriverShipmentController;
 Route::get('/', function () {
     if (auth()->check()) {
         $user = auth()->user();
-        if ($user->hasRole('super_admin')) {
-            return redirect()->route('super-admin.dashboard');
-        } elseif ($user->hasRole('koperasi_induk')) {
-            return redirect()->route('koperasi-induk.dashboard');
-        } elseif ($user->hasRole('pengepul')) {
-            return redirect()->route('pengepul.dashboard');
-        } elseif ($user->hasRole('koperasi_anak')) {
-            return redirect()->route('koperasi-anak.dashboard');
-        } elseif ($user->hasRole('driver')) {
-            return redirect()->route('driver.dashboard');
+
+        // Mapping role pengguna ke route dashboard tujuan
+        $dashboards = [
+            'super_admin'    => 'super-admin.dashboard',
+            'koperasi_induk' => 'koperasi-induk.dashboard',
+            'pengepul'       => 'pengepul.dashboard',
+            'koperasi_anak'  => 'koperasi-anak.dashboard',
+            'driver'         => 'driver.dashboard',
+        ];
+
+        foreach ($dashboards as $role => $routeName) {
+            if ($user->hasRole($role)) {
+                return redirect()->route($routeName);
+            }
         }
     }
+
     return redirect()->route('login');
 });
 
@@ -54,7 +62,22 @@ Route::middleware('auth')->group(function () {
     // ------------------------------------------------------------------------
     Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
         Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+
+        // Rute pembaruan role yang dipanggil oleh dashboard.blade.php
         Route::patch('/users/{id}/role', [SuperAdminDashboardController::class, 'updateUserRole'])->name('users.updateRole');
+
+        // Ekspor Data User
+        Route::get('/users/export/pdf', [UserController::class, 'exportPdf'])->name('users.export.pdf');
+        Route::get('/users/export/excel', [UserController::class, 'exportExcel'])->name('users.export.excel');
+
+        // CRUD Resource Manajemen Pengguna
+        Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
+
+        // CRUD Jenis Limbah (Waste Types)
+        Route::resource('waste-types', WasteTypeController::class)->except(['create', 'edit', 'show']);
+
+        // Audit Logs / Activity Trail Halaman Visual & Export
+        Route::get('/audit-logs', [SuperAdminDashboardController::class, 'auditLogs'])->name('audit-logs.index');
         Route::get('/audit-logs/export', [SuperAdminDashboardController::class, 'exportAuditLogs'])->name('audit-logs.export');
     });
 

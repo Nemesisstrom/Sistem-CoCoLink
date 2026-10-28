@@ -10,11 +10,40 @@
     <nav class="bg-emerald-700 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
-                <div class="flex items-center">
+                {{-- Logo & Links --}}
+                <div class="flex items-center gap-8">
                     <a href="/" class="text-xl font-bold tracking-wider text-emerald-100 flex items-center gap-2">
                         <span>🌴</span> CoCoLink
                     </a>
+
+                    {{-- Navigasi Utama Berdasarkan Role --}}
+                    @auth
+                        <div class="hidden md:flex items-center gap-4 text-sm font-medium">
+                            @hasrole('super_admin')
+                                <a href="{{ route('super-admin.dashboard') }}"
+                                   class="px-3 py-2 rounded-md transition {{ request()->routeIs('super-admin.dashboard') ? 'bg-emerald-800 text-white font-bold' : 'text-emerald-100 hover:bg-emerald-600' }}">
+                                    Dashboard
+                                </a>
+
+                                {{-- Manajemen User + Badge Total Pengguna --}}
+                                <a href="{{ route('super-admin.users.index') }}"
+                                   class="px-3 py-2 rounded-md transition flex items-center gap-2 {{ request()->routeIs('super-admin.users.*') ? 'bg-emerald-800 text-white font-bold' : 'text-emerald-100 hover:bg-emerald-600' }}">
+                                    <span>Manajemen User</span>
+                                    <span class="bg-emerald-900 text-emerald-200 text-xs font-semibold px-2 py-0.5 rounded-full border border-emerald-500">
+                                        {{ $totalUsersCount ?? 0 }}
+                                    </span>
+                                </a>
+
+                                <a href="{{ route('super-admin.audit-logs.index') }}"
+                                   class="px-3 py-2 rounded-md transition {{ request()->routeIs('super-admin.audit-logs.*') ? 'bg-emerald-800 text-white font-bold' : 'text-emerald-100 hover:bg-emerald-600' }}">
+                                    Audit Logs
+                                </a>
+                            @endhasrole
+                        </div>
+                    @endauth
                 </div>
+
+                {{-- User Status & Logout --}}
                 <div class="flex items-center gap-4">
                     @auth
                         <span class="text-sm bg-emerald-800 px-3 py-1 rounded-full text-emerald-200">

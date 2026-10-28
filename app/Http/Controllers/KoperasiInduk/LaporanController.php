@@ -12,17 +12,7 @@ class LaporanController extends Controller
     // Halaman Pratinjau & Filter Laporan
     public function index(Request $request)
     {
-        $query = Order::with(['pengepul', 'wasteType', 'allocations.koperasiAnak', 'allocations.shipment.driver']);
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->whereBetween('created_at', [$request->date_from . ' 00:00:00', $request->date_to . ' 23:59:59']);
-        }
-
-        $orders = $query->latest()->get();
+        $orders = $this->buildFilterQuery($request)->latest()->paginate(25);
 
         return view('koperasi_induk.laporan', compact('orders'));
     }
@@ -30,23 +20,42 @@ class LaporanController extends Controller
     // Export PDF Laporan Transaksi
     public function downloadPdf(Request $request)
     {
-        $query = Order::with(['pengepul', 'wasteType', 'allocations.koperasiAnak', 'allocations.shipment.driver']);
+        $query = $this->buildFilterQuery($request)->latest();
+
+        // Mengambil data terpilih untuk pembuatan PDF
+        $orders = $query->get();
+        $totalVolume = $orders->sum('quantity');
+        $totalNominal = $orders->sum('total_amount');
+
+        $pdf = Pdf::loadView('koperasi_induk.pdf_laporan', compact('orders', 'totalVolume', 'totalNominal'))
+            ->setOption(['isRemoteEnabled' => true, 'isHtml5ParserEnabled' => true])
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan_Sinergi_Limbah_CoCoLink_' . now()->format('Ymd_His') . '.pdf');
+    }
+
+    // Private helper function untuk reusable query filter
+    private function buildFilterQuery(Request $request)
+    {
+        $query = Order::with([
+            'pengepul:id,name,email',
+            'wasteType:id,name',
+            'allocations.koperasiAnak:id,name',
+            'allocations.shipment.driver:id,name'
+        ]);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->whereBetween('created_at', [$request->date_from . ' 00:00:00', $request->date_to . ' 23:59:59']);
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
         }
 
-        $orders = $query->latest()->get();
-        $totalVolume = $orders->sum('quantity');
-        $totalNominal = $orders->sum('total_amount');
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
 
-        $pdf = Pdf::loadView('koperasi_induk.pdf_laporan', compact('orders', 'totalVolume', 'totalNominal'))
-            ->setPaper('a4', 'landscape');
-
-        return $pdf->download('Laporan_Sinergi_Limbah_CoCoLink_' . date('Ymd_His') . '.pdf');
+        return $query;
     }
 }

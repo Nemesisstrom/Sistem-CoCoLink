@@ -13,13 +13,16 @@ use App\Http\Controllers\Api\DriverApiController;
 Route::post('/driver/login', [DriverApiController::class, 'login']);
 
 // Protected Endpoints (Memerlukan Token Sanctum & Role Driver)
-Route::middleware(['auth:sanctum', 'role:driver'])->prefix('driver')->group(function () {
+Route::middleware(['auth:sanctum', 'role:driver,sanctum'])->prefix('driver')->group(function () {
+
+    // Auth Logout & Revoke Token
+    Route::post('/logout', [DriverApiController::class, 'logout']);
 
     // Auth & Profil Driver
     Route::get('/profile', function () {
         return response()->json([
             'status' => 'success',
-            'data' => auth()->user()
+            'data'   => auth()->user(),
         ]);
     });
 

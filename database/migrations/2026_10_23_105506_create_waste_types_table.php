@@ -10,8 +10,11 @@ return new class extends Migration
     {
         Schema::create('waste_types', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // Contoh: Arang Batok Kelapa, Sabut Kelapa, Air Kelapa, Minyak Kelapa
-            $table->string('unit')->default('kg'); // Ton, Liter, Kg
+            $table->string('code')->unique(); // Kode Unik Komoditas
+            $table->string('name'); // Contoh: Arang Batok, Sabut Kelapa, Air Kelapa
+            $table->decimal('price_per_unit', 12, 2)->default(0); // Harga standar per unit
+            $table->enum('unit', ['ton', 'kg', 'liter', 'pcs'])->default('ton'); // Satuan tertinggi: Ton
+            $table->string('icon')->default('bi-box'); // Ikon Bootstrap
             $table->text('description')->nullable();
             $table->timestamps();
         });

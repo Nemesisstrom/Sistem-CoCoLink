@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Models\WasteType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 
 class DashboardController extends Controller
@@ -23,7 +24,21 @@ class DashboardController extends Controller
         $roles = Role::all();
         $wasteTypes = WasteType::all();
 
-        // Query Audit Trail Log dengan Filter
+        // Data Grafik: Aktivitas 6 Bulan Terakhir
+        $monthlyActivity = ActivityLog::select(
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('MONTHNAME(created_at) as month_name'),
+                DB::raw('COUNT(*) as total')
+            )
+            ->where('created_at', '>=', now()->subMonths(6))
+            ->groupBy('month', 'month_name')
+            ->orderBy('month', 'asc')
+            ->get();
+
+        $chartLabels = $monthlyActivity->pluck('month_name');
+        $chartData = $monthlyActivity->pluck('total');
+
+        // Query Audit Trail Log dengan Filter Sidebar
         $logQuery = ActivityLog::with('user');
 
         if ($request->filled('search')) {
@@ -51,7 +66,9 @@ class DashboardController extends Controller
             'users',
             'roles',
             'wasteTypes',
-            'activityLogs'
+            'activityLogs',
+            'chartLabels',
+            'chartData'
         ));
     }
 
@@ -65,64 +82,61 @@ class DashboardController extends Controller
         $oldRole = $user->getRoleNames()->first() ?? 'No Role';
         $user->syncRoles([$request->role]);
 
-        ActivityLog::record(
-            'ROLE_UPDATED',
-            "Memperbarui role pengguna '{$user->name}' dari '{$oldRole}' menjadi '{$request->role}'."
-        );
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'ROLE_UPDATED',
+            'description' => "Memperbarui role pengguna '{$user->name}' dari '{$oldRole}' menjadi '{$request->role}'."
+        ]);
 
         return redirect()->back()->with('success', "Role untuk user {$user->name} berhasil diperbarui.");
     }
 
-    // Ekspor Audit Log ke CSV / Excel
-    public function exportAuditLogs(Request $request)
+    public function auditLogs(Request $request)
     {
-        $fileName = 'Audit_Trail_CoCoLink_' . date('Ymd_His') . '.csv';
+        $query = ActivityLog::with('user');
 
-        $logQuery = ActivityLog::with('user');
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $logQuery->where(function($q) use ($search) {
-                $q->where('action', 'LIKE', "%{$search}%")
-                  ->orWhere('description', 'LIKE', "%{$search}%")
-                  ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('name', 'LIKE', "%{$search}%");
-                  });
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($u) use ($search) {
+                    $u->where('name', 'like', "%{$search}%");
+                })->orWhere('description', 'like', "%{$search}%");
             });
         }
 
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $logQuery->whereBetween('created_at', [$request->date_from . ' 00:00:00', $request->date_to . ' 23:59:59']);
-        }
+        $logs = $query->latest()->paginate(15);
 
-        $logs = $logQuery->latest()->get();
+        return view('super_admin.audit_logs.index', compact('logs'));
+    }
+
+    public function exportAuditLogs(Request $request)
+    {
+        $fileName = 'Audit_Logs_CoCoLink_' . now()->format('Ymd_His') . '.csv';
+        $logs = ActivityLog::with('user')->latest()->get();
 
         $headers = [
-            "Content-type"        => "text/csv; charset=utf-8",
+            "Content-type"        => "text/csv",
             "Content-Disposition" => "attachment; filename=$fileName",
             "Pragma"              => "no-cache",
             "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
             "Expires"             => "0"
         ];
 
-        $columns = ['ID Log', 'Waktu Kejadian', 'Aksi Log', 'Keterangan / Deskripsi', 'Nama Pengguna', 'IP Address'];
-
-        $callback = function() use($logs, $columns) {
+        $callback = function() use($logs) {
             $file = fopen('php://output', 'w');
-
-            // Tambahkan BOM untuk dukungan UTF-8 pada Microsoft Excel
-            fputs($file, "\xEF\xBB\xBF");
-
-            fputcsv($file, $columns);
+            fputcsv($file, ['ID Log', 'Waktu', 'Pengguna', 'Aksi', 'Deskripsi']);
 
             foreach ($logs as $log) {
                 fputcsv($file, [
                     $log->id,
-                    $log->created_at->format('d-m-Y H:i:s'),
+                    $log->created_at ? $log->created_at->format('Y-m-d H:i:s') : '-',
+                    $log->user?->name ?? 'Sistem',
                     $log->action,
-                    $log->description,
-                    $log->user->name ?? 'System Automated',
-                    $log->ip_address ?? '127.0.0.1',
+                    $log->description
                 ]);
             }
 

@@ -14,13 +14,25 @@ class OrderAllocationController extends Controller
 {
     public function allocate(Request $request, $orderId)
     {
+        $order = Order::findOrFail($orderId);
+
+        // Validasi: Cegah alokasi jika status order tidak valid
+        if (in_array($order->status, ['completed', 'cancelled'])) {
+            return redirect()->back()->with('error', 'Pesanan yang sudah selesai atau dibatalkan tidak dapat dialokasikan.');
+        }
+
         $request->validate([
-            'allocations' => 'required|array',
+            'allocations' => 'required|array|min:1',
             'allocations.*.koperasi_anak_id' => 'required|exists:users,id',
             'allocations.*.allocated_quantity' => 'required|numeric|min:0.1',
         ]);
 
-        $order = Order::findOrFail($orderId);
+        // Validasi Total Kuantitas Alokasi vs Kuantitas Order
+        $totalAllocatedQuantity = array_sum(array_column($request->allocations, 'allocated_quantity'));
+
+        if ($totalAllocatedQuantity > $order->quantity) {
+            return redirect()->back()->with('error', 'Total kuantitas alokasi (' . $totalAllocatedQuantity . ' kg) melebihi jumlah pesanan (' . $order->quantity . ' kg).');
+        }
 
         DB::transaction(function () use ($order, $request) {
             foreach ($request->allocations as $allocationData) {
@@ -32,14 +44,18 @@ class OrderAllocationController extends Controller
                         'status' => 'assigned',
                     ]);
 
-                    // Kirim Email Otomatis ke Koperasi Anak penerima alokasi
-                    Mail::to($allocation->koperasiAnak->email)->queue(new AllocationNotificationMail($allocation));
+                    // Memuat relasi koperasiAnak secara eksplisit untuk efisiensi
+                    $allocation->load('koperasiAnak');
+
+                    if ($allocation->koperasiAnak && $allocation->koperasiAnak->email) {
+                        Mail::to($allocation->koperasiAnak->email)->queue(new AllocationNotificationMail($allocation));
+                    }
                 }
             }
 
             $order->update(['status' => 'allocated']);
         });
 
-        return redirect()->back()->with('success', 'Pesanan berhasil dialokasikan dan notifikasi email dikirim ke Koperasi Anak.');
+        return redirect()->back()->with('success', 'Pesanan berhasil dialokasikan dan notifikasi email telah masuk ke antrean (queue).');
     }
 }
