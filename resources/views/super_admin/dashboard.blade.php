@@ -16,59 +16,66 @@
     </div>
 
     <!-- Ringkasan Metrik Platform -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {{-- Card 1: Total Pengguna --}}
-        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-            <p class="text-xs font-semibold text-gray-400 uppercase">Total User Terdaftar</p>
-            <p class="text-2xl font-bold text-gray-800 mt-1">{{ $totalUsers }}</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase">Total User</p>
+                <p class="text-2xl font-bold text-gray-800 mt-1">{{ $totalUsers ?? 0 }}</p>
+            </div>
+            <span class="text-[10px] text-gray-500 font-medium mt-2">Pengguna Terdaftar</span>
         </div>
 
-        {{-- Card 2: Jenis Limbah / Komoditas --}}
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
             <div>
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Katalog Komoditas</p>
-                <h3 class="text-3xl font-extrabold text-gray-800 mt-1">{{ $totalWasteTypesCount ?? 0 }}</h3>
-                <span class="text-xs text-emerald-600 font-medium">Jenis Limbah Aktif</span>
+                <p class="text-xs font-semibold text-gray-400 uppercase">Katalog Komoditas</p>
+                <p class="text-2xl font-bold text-emerald-700 mt-1">{{ $totalWasteTypesCount ?? count($wasteTypes ?? []) }}</p>
             </div>
-            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                <i class="bi bi-box-seam-fill text-2xl"></i>
-            </div>
+            <span class="text-[10px] text-emerald-600 font-medium mt-2">Jenis Limbah Aktif</span>
         </div>
 
-        {{-- Card 3: Total Transaksi Pesanan --}}
-        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-            <p class="text-xs font-semibold text-blue-600 uppercase">Total Pesanan Masuk</p>
-            <p class="text-2xl font-bold text-blue-700 mt-1">{{ $totalOrders }}</p>
-            <span class="text-xs text-blue-600 font-medium">Dalam Platform</span>
-        </div>
-        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-            <p class="text-xs font-semibold text-green-600 uppercase">Pesanan Selesai</p>
-            <p class="text-2xl font-bold text-green-700 mt-1">{{ $totalCompletedOrders }}</p>
-        </div>
-        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-            <p class="text-xs font-semibold text-emerald-600 uppercase">Total Nilai Transaksi</p>
-            <p class="text-xl font-bold text-emerald-800 mt-1">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</p>
-        </div>
-        {{-- Card 4: Log Aktivitas Hari Ini --}}
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
             <div>
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Aktivitas Hari Ini</p>
-                <h3 class="text-3xl font-extrabold text-gray-800 mt-1">{{ $todayActivityLogsCount ?? 0 }}</h3>
-                <span class="text-xs text-amber-600 font-medium">Audit Trail Terekam</span>
+                <p class="text-xs font-semibold text-blue-600 uppercase">Total Pesanan</p>
+                <p class="text-2xl font-bold text-blue-700 mt-1">{{ $totalOrders ?? 0 }}</p>
             </div>
-            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                <i class="bi bi-shield-check text-2xl"></i>
+            <span class="text-[10px] text-blue-600 font-medium mt-2">Dalam Platform</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <div>
+                <p class="text-xs font-semibold text-green-600 uppercase">Pesanan Selesai</p>
+                <p class="text-2xl font-bold text-green-700 mt-1">{{ $totalCompletedOrders ?? 0 }}</p>
             </div>
+            <span class="text-[10px] text-green-600 font-medium mt-2">Transaksi Berhasil</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <div>
+                <p class="text-xs font-semibold text-emerald-600 uppercase">Nilai Transaksi</p>
+                <p class="text-lg font-bold text-emerald-800 mt-1">Rp {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}</p>
+            </div>
+            <span class="text-[10px] text-emerald-600 font-medium mt-2">Omset Platform</span>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <div>
+                <p class="text-xs font-semibold text-amber-600 uppercase">Aktivitas Hari Ini</p>
+                <p class="text-2xl font-bold text-amber-700 mt-1">{{ $todayActivityLogsCount ?? count($activityLogs ?? []) }}</p>
+            </div>
+            <span class="text-[10px] text-amber-600 font-medium mt-2">Audit Log Terekam</span>
         </div>
     </div>
 
-    <!-- Grafik Ringkasan Aktivitas System -->
+    <!-- Grafik Ringkasan Aktivitas System (Data dilempar via HTML dataset agar aman dari linter JS) -->
     <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
         <h2 class="text-md font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>📊</span> Ringkasan Aktivitas Sistem (6 Bulan Terakhir)
         </h2>
         <div class="h-56">
-            <canvas id="activityChart"></canvas>
+            <canvas id="activityChart"
+                data-labels="{{ json_encode($chartLabels ?? []) }}"
+                data-values="{{ json_encode($chartData ?? []) }}">
+            </canvas>
         </div>
     </div>
 
@@ -172,21 +179,25 @@
     </div>
 </div>
 
+<!-- Script Chart.js Murni Tanpa Tag Blade di Dalamnya -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const canvas = document.getElementById('activityChart');
         if (!canvas) return;
 
+        const chartLabels = JSON.parse(canvas.dataset.labels || '[]');
+        const chartValues = JSON.parse(canvas.dataset.values || '[]');
+
         const ctx = canvas.getContext('2d');
         if (typeof window.Chart !== 'undefined') {
             new window.Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: {!! json_encode($chartLabels ?? []) !!},
+                    labels: chartLabels,
                     datasets: [{
                         label: 'Jumlah Aktivitas Tercatat',
-                        data: {!! json_encode($chartData ?? []) !!},
+                        data: chartValues,
                         borderColor: '#059669',
                         backgroundColor: 'rgba(5, 150, 105, 0.1)',
                         borderWidth: 2,
