@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SuperAdmin\DashboardController as SuperAdminDashboardController;
@@ -57,6 +58,12 @@ Route::middleware('auth')->group(function () {
     // Process Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // Rute Verifikasi Email Wajib (Wajib bernama 'verification.verify' untuk pemicu notifikasi VerifyEmail)
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $request->fulfill();
+        return redirect('/')->with('success', 'Email Anda telah berhasil diverifikasi!');
+    })->middleware(['signed'])->name('verification.verify');
+
     // ------------------------------------------------------------------------
     // Role: Super Admin Platform
     // ------------------------------------------------------------------------
@@ -73,7 +80,7 @@ Route::middleware('auth')->group(function () {
         // CRUD Resource Manajemen Pengguna
         Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
 
-        Route::post('/users/{id}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
+        Route::match(['GET', 'POST'], '/users/{id}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
 
         // CRUD Jenis Limbah (Waste Types)
         Route::resource('waste-types', WasteTypeController::class)->except(['create', 'edit', 'show']);

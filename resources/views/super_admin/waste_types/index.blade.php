@@ -12,13 +12,6 @@
         </button>
     </div>
 
-    {{-- Alert Notification --}}
-    @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4">
-            {{ session('success') }}
-        </div>
-    @endif
-
     {{-- Tabel Data Jenis Limbah --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
@@ -44,73 +37,22 @@
                         <td class="p-4 font-mono text-xs font-bold text-gray-700">{{ $item->code }}</td>
                         <td class="p-4 font-bold text-gray-800">{{ $item->name }}</td>
                         <td class="p-4 font-bold text-emerald-700">
-                            Rp {{ number_format($item->price_per_kg, 0, ',', '.') }} / <span class="text-xs text-gray-500 font-normal">{{ $item->unit ?? 'kg' }}</span>
+                            Rp {{ number_format($item->price_per_unit, 0, ',', '.') }} / <span class="text-xs text-gray-500 font-normal">{{ $item->unit ?? 'ton' }}</span>
                         </td>
                         <td class="p-4 text-gray-500 max-w-xs truncate">{{ $item->description ?? '-' }}</td>
                         <td class="p-4 text-right space-x-2">
                             <button data-bs-toggle="modal" data-bs-target="#editWasteTypeModal{{ $item->id }}" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-3 py-1.5 rounded-md border border-blue-200 transition">
                                 Edit
                             </button>
-                            <form action="{{ route('super-admin.waste-types.destroy', $item->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus jenis limbah ini?')">
+                            <form id="delete-waste-form-{{ $item->id }}" action="{{ route('super-admin.waste-types.destroy', $item->id) }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-md border border-red-200 transition">
+                                <button type="button" onclick="confirmDelete('delete-waste-form-{{ $item->id }}', 'Hapus Jenis Limbah {{ $item->name }}?', 'Data komoditas ini akan dihapus dari katalog master.')" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-md border border-red-200 transition">
                                     Hapus
                                 </button>
                             </form>
                         </td>
                     </tr>
-
-                    {{-- Modal Edit --}}
-                    <div class="modal fade" id="editWasteTypeModal{{ $item->id }}" tabindex="-1">
-                        <div class="modal-dialog">
-                            <form action="{{ route('super-admin.waste-types.update', $item->id) }}" method="POST" class="modal-content">
-                                @csrf
-                                @method('PUT')
-                                <div class="modal-header">
-                                    <h5 class="modal-title font-bold">Edit Jenis Limbah - {{ $item->name }}</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body space-y-3">
-                                    <div>
-                                        <label class="form-label">Kode Limbah</label>
-                                        <input type="text" name="code" class="form-control" value="{{ $item->code }}" required>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Nama Komoditas</label>
-                                        <input type="text" name="name" class="form-control" value="{{ $item->name }}" required>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="form-label">Harga Acuan (Rp)</label>
-                                            <input type="number" name="price_per_kg" class="form-control" value="{{ $item->price_per_kg }}" required>
-                                        </div>
-                                        <div>
-                                            <label class="form-label">Satuan Unit</label>
-                                            <select name="unit" class="form-select" required>
-                                                <option value="kg" {{ $item->unit == 'kg' ? 'selected' : '' }}>Kilogram (kg)</option>
-                                                <option value="liter" {{ $item->unit == 'liter' ? 'selected' : '' }}>Liter (L)</option>
-                                                <option value="ton" {{ $item->unit == 'ton' ? 'selected' : '' }}>Ton</option>
-                                                <option value="pcs" {{ $item->unit == 'pcs' ? 'selected' : '' }}>Pcs / Karung</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Ikon Bootstrap (e.g. bi-trash, bi-box, bi-droplet)</label>
-                                        <input type="text" name="icon" class="form-control" value="{{ $item->icon ?? 'bi-box' }}">
-                                    </div>
-                                    <div>
-                                        <label class="form-label">Deskripsi</label>
-                                        <textarea name="description" class="form-control" rows="2">{{ $item->description }}</textarea>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
                     @empty
                     <tr>
                         <td colspan="6" class="p-4 text-center text-gray-400 italic">Belum ada jenis limbah yang terdaftar.</td>
@@ -125,51 +67,104 @@
     </div>
 </div>
 
-{{-- Modal Tambah Jenis Limbah --}}
-<div class="modal fade" id="addWasteTypeModal" tabindex="-1">
+{{-- Loop Modal Edit Jenis Limbah --}}
+@foreach($wasteTypes as $item)
+<div class="modal fade" id="editWasteTypeModal{{ $item->id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="{{ route('super-admin.waste-types.store') }}" method="POST" class="modal-content">
+        <form action="{{ route('super-admin.waste-types.update', $item->id) }}" method="POST" class="modal-content">
             @csrf
+            @method('PUT')
             <div class="modal-header">
-                <h5 class="modal-title font-bold">Tambah Jenis Limbah Baru</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title font-bold text-gray-800">Edit Jenis Limbah - {{ $item->name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body space-y-3">
+            <div class="modal-body space-y-3 text-left">
                 <div>
-                    <label class="form-label">Kode Limbah</label>
-                    <input type="text" name="code" placeholder="Contoh: SML-01, SABUT-RAW" class="form-control" required>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Kode Limbah</label>
+                    <input type="text" name="code" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" value="{{ $item->code }}" required>
                 </div>
                 <div>
-                    <label class="form-label">Nama Komoditas Limbah</label>
-                    <input type="text" name="name" placeholder="Contoh: Sabut Kelapa Mentah" class="form-control" required>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Nama Komoditas</label>
+                    <input type="text" name="name" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" value="{{ $item->name }}" required>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="form-label">Harga Acuan (Rp)</label>
-                        <input type="number" name="price_per_kg" placeholder="3500" class="form-control" required>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Harga Acuan (Rp)</label>
+                        <input type="number" name="price_per_unit" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" value="{{ $item->price_per_unit }}" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label font-semibold text-xs text-gray-700">Satuan Unit Utama (Satuan Tertinggi: Ton)</label>
-                        <select name="unit" class="form-select border border-gray-300 rounded-lg text-sm" required>
-                            <option value="ton" selected>Ton (Satuan Tertinggi Bulk / Tonase)</option>
-                            <option value="kg">Kilogram (kg)</option>
-                            <option value="liter">Liter (L)</option>
-                            <option value="pcs">Pcs / Karung / Bal</option>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Satuan Unit Utama</label>
+                        <select name="unit" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+                            <option value="ton" {{ $item->unit == 'ton' ? 'selected' : '' }}>Ton (Satuan Tertinggi Bulk)</option>
+                            <option value="kg" {{ $item->unit == 'kg' ? 'selected' : '' }}>Kilogram (kg)</option>
+                            <option value="liter" {{ $item->unit == 'liter' ? 'selected' : '' }}>Liter (L)</option>
+                            <option value="pcs" {{ $item->unit == 'pcs' ? 'selected' : '' }}>Pcs / Karung</option>
                         </select>
                     </div>
                 </div>
                 <div>
-                    <label class="form-label">Ikon Class (e.g. bi-trash, bi-droplet, bi-box)</label>
-                    <input type="text" name="icon" value="bi-box" class="form-control">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Ikon Bootstrap (e.g. bi-fire, bi-box, bi-droplet-fill)</label>
+                    <input type="text" name="icon" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" value="{{ $item->icon ?? 'bi-box' }}">
                 </div>
                 <div>
-                    <label class="form-label">Deskripsi</label>
-                    <textarea name="description" class="form-control" rows="2" placeholder="Catatan/spesifikasi limbah..."></textarea>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Deskripsi</label>
+                    <textarea name="description" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" rows="2">{{ $item->description }}</textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-emerald-600 text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg font-semibold">Simpan Komoditas</button>
+                <button type="button" class="px-4 py-2 text-xs font-semibold text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-lg transition" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endforeach
+
+{{-- Modal Tambah Jenis Limbah --}}
+<div class="modal fade" id="addWasteTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="{{ route('super-admin.waste-types.store') }}" method="POST" class="modal-content">
+            @csrf
+            <div class="modal-header">
+                <h5 class="modal-title font-bold text-gray-800">Tambah Jenis Limbah Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body space-y-3 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Kode Limbah</label>
+                    <input type="text" name="code" placeholder="Contoh: TON-SABUT, TON-ARNG" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Nama Komoditas Limbah</label>
+                    <input type="text" name="name" placeholder="Contoh: Sabut Kelapa Mentah" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Harga Acuan (Rp)</label>
+                        <input type="number" name="price_per_unit" placeholder="3500000" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Satuan Unit Utama</label>
+                        <select name="unit" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" required>
+                            <option value="ton" selected>Ton (Satuan Tertinggi Bulk)</option>
+                            <option value="kg">Kilogram (kg)</option>
+                            <option value="liter">Liter (L)</option>
+                            <option value="pcs">Pcs / Karung</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Ikon Class (e.g. bi-fire, bi-droplet-fill, bi-box-seam)</label>
+                    <input type="text" name="icon" value="bi-box-seam" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Deskripsi</label>
+                    <textarea name="description" class="w-full text-sm border border-gray-300 rounded-lg p-2 focus:ring-emerald-500 focus:border-emerald-500" rows="2" placeholder="Catatan/spesifikasi limbah..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="px-4 py-2 text-xs font-semibold text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-lg transition" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition">Simpan Komoditas</button>
             </div>
         </form>
     </div>

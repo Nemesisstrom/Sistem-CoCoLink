@@ -25,18 +25,6 @@
         </div>
     </div>
 
-    {{-- Alert Success & Error --}}
-    @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4">
-            {{ session('success') }}
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
-            {{ session('error') }}
-        </div>
-    @endif
-
     {{-- Filter & Search Form --}}
     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
         <form action="{{ route('super-admin.users.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -96,7 +84,7 @@
                                 {{ strtoupper(str_replace('_', ' ', $user->roles->pluck('name')->first() ?? 'NO ROLE')) }}
                             </span>
                         </td>
-                        {{-- Kolom Status Verifikasi & Kirim Ulang --}}
+                        {{-- Kolom Status Verifikasi & Tombol Kirim Ulang --}}
                         <td class="p-4">
                             @if($user->hasVerifiedEmail())
                                 <span class="px-2.5 py-1 text-xs rounded-full font-bold bg-green-100 text-green-800 border border-green-200 inline-flex items-center gap-1">
@@ -120,10 +108,10 @@
                             <button data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-3 py-1.5 rounded-md border border-blue-200 transition">
                                 Edit
                             </button>
-                            <form action="{{ route('super-admin.users.destroy', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus pengguna ini?')">
+                            <form id="delete-user-form-{{ $user->id }}" action="{{ route('super-admin.users.destroy', $user->id) }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-md border border-red-200 transition">
+                                <button type="button" onclick="confirmDelete('delete-user-form-{{ $user->id }}', 'Hapus Pengguna {{ $user->name }}?', 'Akun dan hak akses role pengguna ini akan dihapus permanen.')" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-md border border-red-200 transition">
                                     Hapus
                                 </button>
                             </form>
