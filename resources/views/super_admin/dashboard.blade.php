@@ -17,13 +17,29 @@
 
     <!-- Ringkasan Metrik Platform -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {{-- Card 1: Total Pengguna --}}
         <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
             <p class="text-xs font-semibold text-gray-400 uppercase">Total User Terdaftar</p>
             <p class="text-2xl font-bold text-gray-800 mt-1">{{ $totalUsers }}</p>
         </div>
+
+        {{-- Card 2: Jenis Limbah / Komoditas --}}
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Katalog Komoditas</p>
+                <h3 class="text-3xl font-extrabold text-gray-800 mt-1">{{ $totalWasteTypesCount ?? 0 }}</h3>
+                <span class="text-xs text-emerald-600 font-medium">Jenis Limbah Aktif</span>
+            </div>
+            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                <i class="bi bi-box-seam-fill text-2xl"></i>
+            </div>
+        </div>
+
+        {{-- Card 3: Total Transaksi Pesanan --}}
         <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
             <p class="text-xs font-semibold text-blue-600 uppercase">Total Pesanan Masuk</p>
             <p class="text-2xl font-bold text-blue-700 mt-1">{{ $totalOrders }}</p>
+            <span class="text-xs text-blue-600 font-medium">Dalam Platform</span>
         </div>
         <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
             <p class="text-xs font-semibold text-green-600 uppercase">Pesanan Selesai</p>
@@ -32,6 +48,17 @@
         <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
             <p class="text-xs font-semibold text-emerald-600 uppercase">Total Nilai Transaksi</p>
             <p class="text-xl font-bold text-emerald-800 mt-1">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</p>
+        </div>
+        {{-- Card 4: Log Aktivitas Hari Ini --}}
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Aktivitas Hari Ini</p>
+                <h3 class="text-3xl font-extrabold text-gray-800 mt-1">{{ $todayActivityLogsCount ?? 0 }}</h3>
+                <span class="text-xs text-amber-600 font-medium">Audit Trail Terekam</span>
+            </div>
+            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                <i class="bi bi-shield-check text-2xl"></i>
+            </div>
         </div>
     </div>
 

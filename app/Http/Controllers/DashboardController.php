@@ -13,7 +13,13 @@ class DashboardController extends Controller
     public function koperasiIndukDashboard()
     {
         $orders = Order::with(['pengepul', 'wasteType', 'allocations.koperasiAnak'])->latest()->get();
-        $koperasiAnakList = User::role('koperasi_anak')->get();
+
+        // Ambil daftar Koperasi Anak beserta alokasi aktifnya untuk statistik progress bar
+        $koperasiAnakList = User::role('koperasi_anak')
+            ->with(['allocations' => function($q) {
+                $q->whereIn('status', ['assigned', 'pending', 'accepted']);
+            }])
+            ->get();
 
         return view('koperasi_induk.dashboard', compact('orders', 'koperasiAnakList'));
     }

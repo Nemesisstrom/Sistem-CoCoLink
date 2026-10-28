@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
     <nav class="bg-emerald-700 text-white shadow-lg">
@@ -72,6 +74,9 @@
     <main class="py-8">
         @yield('content')
     </main>
+
+    <!-- Bootstrap 5 Bundle JS (Untuk mengaktifkan fungsi Modal) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     {{-- Notification Script & Confirm Helper --}}
     <script>

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
             $table->foreignId('koperasi_anak_id')->constrained('users')->onDelete('cascade'); // Koperasi A1, A2
-            $table->decimal('allocated_quantity', 10, 2); // Contoh: 30 Ton untuk A1, 20 Ton untuk A2
+            $table->decimal('allocated_quantity', 12, 2); // Contoh: 30 Ton untuk A1, 20 Ton untuk A2
             $table->enum('status', [
                 'assigned',   // Alokasi ditugaskan dari Koperasi Induk
                 'accepted',   // Disetujui Koperasi Anak

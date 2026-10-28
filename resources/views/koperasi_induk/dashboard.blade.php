@@ -35,6 +35,41 @@
         </div>
     </div>
 
+    <!-- Estimasi Kapasitas Stok Koperasi Anak -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <h2 class="text-md font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span>🏭</span> Estimasi Kapasitas Stok Gudang Koperasi Anak
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            @foreach($koperasiAnakList as $coop)
+                @php
+                    // Mengambil kuota yang sedang ditangani oleh Koperasi Anak
+                    $activeAllocated = $coop->allocations
+                        ? $coop->allocations->whereIn('status', ['assigned', 'pending', 'accepted'])->sum('allocated_quantity')
+                        : 0;
+                    $capacity = $coop->stock_capacity ?? 1000; // Default nilai kapasitas (misal: 1000 Kg)
+                    $usedPercentage = $capacity > 0 ? min(100, round(($activeAllocated / $capacity) * 100)) : 0;
+                @endphp
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-gray-800 text-sm">{{ $coop->name }}</span>
+                        <span class="text-xs font-semibold {{ $usedPercentage > 85 ? 'text-red-600' : 'text-emerald-700' }}">
+                            {{ $activeAllocated }} / {{ $capacity }} Kg
+                        </span>
+                    </div>
+                    <!-- Progress Bar Kapasitas -->
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                        <div class="h-2.5 rounded-full {{ $usedPercentage > 85 ? 'bg-red-500' : 'bg-emerald-600' }}" style="width: {{ $usedPercentage }}%"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px] text-gray-400">
+                        <span>Sisa Kuota: <strong class="text-gray-700">{{ max(0, $capacity - $activeAllocated) }} Kg</strong></span>
+                        <span>Terguna: <strong>{{ $usedPercentage }}%</strong></span>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
     <!-- Tabel Pesanan & Alokasi Pasokan -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="p-6 border-b border-gray-100">
