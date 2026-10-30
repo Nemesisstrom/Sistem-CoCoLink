@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('users', function (Blueprint $table) {
+         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
@@ -21,7 +21,7 @@ return new class extends Migration
             // Relasi hirarki: Koperasi Anak merujuk ke Koperasi Induk
             $table->foreignId('parent_koperasi_id')->nullable()->constrained('users')->onDelete('cascade');
 
-            $table->decimal('stock_capacity', 12, 2)->default(100.00)->after('address'); // Dalam Ton
+            $table->decimal('stock_capacity', 12, 2)->default(100.00); // Dalam Ton
             $table->string('phone_number')->nullable();
             $table->text('address')->nullable();
             $table->string('vehicle_number')->nullable(); // Khusus role driver
